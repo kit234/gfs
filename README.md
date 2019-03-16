@@ -13,7 +13,7 @@ gfs需要用到"GFS_SH_PATH"和"GFS_Software_Source_Path"两个变量
 你可以在.bashrc文件中设置这两个变量  
 例如:  
 	`export GFS_SH_PATH=/home/user/gfs`  
-	`export GFS_Software_Software_Path=/home/user/source`
+	`export GFS_Software_Software_Path=/home/user/source`  
 gfs的运行需要tar、axel、git这些工具
 ## 编译安装软件的流程
 一般来说,编译安装软件分为这几步:  
