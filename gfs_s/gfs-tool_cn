@@ -1,0 +1,208 @@
+#! /bin/bash
+
+if [ "$#" != "2" ]; then
+	echo "Usage: gfs-tool options name"
+	echo "options:"
+	echo "      add            添加一个GFS脚本"
+	echo "      del            删除一个GFS脚本"
+	echo "      cat            查看一个GFS脚本"
+	exit
+fi
+if [ "$1" == "add" ]; then
+	if [ -f "${GFS_SH_PATH}/${2}_GFS.sh" ]; then
+		echo "${2}_GFS.sh 已经存在"
+		exit
+	fi
+	# select download
+	echo "请选择下载工具"
+	echo "    1. axel"
+	echo "    2. git"
+	read -p "请选择(默认为1): " select
+	if [[ "${select}" == "2" ]]; then
+		GFS_Download=git
+	else
+		GFS_Download=axel
+	fi
+	#
+	read -p "请输入${2}的源码的下载地址: " website_source
+	if [ "${GFS_Download}" == "axel" ]; then
+		read -p "请输入${2}的压缩包名: " tar_name
+	fi
+	read -p "请输入${2}解压后的源码目录名: " dir_name
+	# select configure
+	echo "请选择configure创建方式"
+	echo "    1. configure"
+	echo "    2. autogen"
+	read -p "请选择(默认为1): " select
+	if [[ "${select}" == "2" ]]; then
+		GFS_Configure=autogen
+	else
+		GFS_Configure=configure
+	fi
+	# start create
+	if [ ! -d "${GFS_Software_Source_Path}/software_tar" ]; then
+		mkdir ${GFS_Software_Source_Path}/software_tar
+	fi
+	SH=${GFS_SH_PATH}/${2}_GFS.sh
+    touch ${SH}
+	# write
+	echo "#! /bin/bash" >> ${SH}
+	echo 'GFS_Option=$1' >> ${SH}
+	# Source
+	if [ "${GFS_Download}" == "axel" ]; then
+		echo "if [ \"\${GFS_Option}\" == \"source\" ]; then" >> ${SH}
+		echo "    if [ ! -d \"\${GFS_Software_Source_Path}/software_tar\" ]; then" >> ${SH}
+		echo "        mkdir \${GFS_Software_Source_Path}/software_tar" >> ${SH}
+		echo "    fi" >> ${SH}
+		echo "    axel ${website_source} -o \${GFS_Software_Source_Path}/software_tar" >> ${SH}
+		echo "    tar -xvf \${GFS_Software_Source_Path}/software_tar/${tar_name} -C \${GFS_Software_Source_Path}" >> ${SH}
+		echo "    echo \"已将${2}的压缩包下载至\${GFS_Software_Source_Path}/software_tar\"" >> ${SH}
+		echo "    echo \"已将${2}的压缩包解压至\${GFS_Software_Source_Path}\"" >> ${SH}
+		echo "fi" >> ${SH}
+	else
+		echo "if [ \"\${GFS_Option}\" == \"source\" ]; then" >> ${SH}
+		echo "    git clone ${website_source} \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+		echo "    echo \"已将${2}的源代码下载至\${GFS_Software_Source_Path}/software_tar\"" >> ${SH}
+		echo "fi" >> ${SH}
+	fi
+	# Configure
+	if [ "${GFS_Configure}" == "configure" ]; then
+		echo "if [ \"\${GFS_Option}\" == \"configure\" ]; then" >> ${SH}
+		echo "    if [ ! -f \"\${GFS_Software_Source_Path}/${dir_name}/configure\" ]; then" >> ${SH}
+		echo "        echo \"文件\${GFS_Software_Source_Path}/${dir_name}/configure不存在\"" >> ${SH}
+		echo "        unset GFS_Software_Source_Path GFS_Option" >> ${SH}
+		echo "        exit" >> ${SH}
+		echo "    fi" >> ${SH}
+		echo "    cd \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+		echo "    while true ; do " >> ${SH}
+		echo "        read -p \"请输入configure的参数[(s)tart,(q)uit,(h)elp]: \" GFS_Buffer" >> ${SH}
+		echo "        if [[ \"\${GFS_Buffer}\" == \"q\" ]]; then" >> ${SH}
+		echo "            break" >> ${SH}
+		echo "        elif [[ \"\${GFS_Buffer}\" == \"h\" ]]; then" >> ${SH}
+		echo "            ./configure --help" >> ${SH}
+		echo "        elif [[ \"\${GFS_Buffer}\" == \"s\" ]]; then" >> ${SH}
+		echo "            ./configure \${GFS_Configure_Option}" >> ${SH}
+		echo "            break" >> ${SH}
+		echo "        else" >> ${SH}
+		echo "            GFS_Configure_Option=\"\${GFS_Configure_Option} \${GFS_Buffer}\"" >> ${SH}
+		echo "        fi" >> ${SH}
+		echo "    done" >> ${SH}
+		echo "    unset GFS_Configure_Option GFS_Buffer" >> ${SH}
+		echo "fi" >> ${SH}
+	else
+		echo "if [ \"\${GFS_Option}\" == \"configure\" ]; then" >> ${SH}
+		echo "    if [ ! -f \"\${GFS_Software_Source_Path}/${dir_name}/autogen.sh\" ]; then" >> ${SH}
+		echo "        echo \"文件\${GFS_Software_Source_Path}/${dir_name}/autogen.sh不存在\"" >> ${SH}
+		echo "        unset GFS_Software_Source_Path GFS_Option" >> ${SH}
+		echo "        exit" >> ${SH}
+		echo "    fi" >> ${SH}
+		echo "    cd \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+		echo "    while true; do" >> ${SH}
+		echo "        read -p \"请输入autogen的参数[(s)tart,(q)uit,(h)elp]: \" GFS_Buffer" >> ${SH}
+		echo "        if [[ \"\${GFS_Buffer}\" == \"q\" ]]; then" >> ${SH}
+		echo "            break" >> ${SH}
+		echo "        elif [[ \"\${GFS_Buffer}\" == \"h\" ]]; then" >> ${SH}
+		echo "            ./autogen.sh --help" >> ${SH}
+		echo "        elif [[ \"\${GFS_Buffer}\" == \"s\" ]]; then" >> ${SH}
+		echo "            ./autogen.sh \${GFS_Autogen_Option}" >> ${SH}
+		echo "            break" >> ${SH}
+		echo "        else" >> ${SH}
+		echo "            GFS_Autogen_Option=\"\${GFS_Autogen_Option} \${GFS_Buffer}\"" >> ${SH}
+		echo "        fi" >> ${SH}
+		echo "    done" >> ${SH}
+		echo "    unset GFS_Autogen_Option GFS_Buffer" >> ${SH}
+		echo "fi" >> ${SH}
+	fi
+	# make
+	echo "if [ \"\${GFS_Option}\" == \"make\" ]; then" >> ${SH}
+	echo "    if [ ! -f \"\${GFS_Software_Source_Path}/${dir_name}/Makefile\" ]; then" >> ${SH}
+	echo "        echo \"文件\${GFS_Software_Source_Path}/${dir_name}/Makefile不存在\"" >> ${SH}
+	echo "        unset GFS_Option GFS_Software_Source_Path" >> ${SH}
+	echo "        exit" >> ${SH}
+	echo "    fi" >> ${SH}
+	echo "    cd \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+	echo "    while true; do" >> ${SH}
+	echo "        read -p \"请输入Makefile的参数[(s)tart,(q)uit]: \" GFS_Buffer" >> ${SH}
+	echo "        if [[ \"\${GFS_Buffer}\" == \"q\" ]]; then" >> ${SH}
+	echo "            break" >> ${SH}
+	echo "        elif [[ \"\${GFS_Buffer}\" == \"s\" ]]; then" >> ${SH}
+	echo "            make \${GFS_Make_Option}" >> ${SH}
+	echo "            break" >> ${SH}
+	echo "        else" >> ${SH}
+	echo "            GFS_Make_Option=\"\${GFS_Make_Option} \${GFS_Buffer}\"" >> ${SH}
+	echo "        fi" >> ${SH}
+	echo "    done" >> ${SH}
+	echo "    unset GFS_Buffer GFS_Make_Option" >> ${SH}
+	echo "fi" >> ${SH}
+	# makeclean
+	echo "if [ \"\${GFS_Option}\" == \"makeclean\" ]; then" >> ${SH}
+	echo "    if [ ! -f \"\${GFS_Software_Source_Path}/${dir_name}/Makefile\" ]; then" >> ${SH}
+	echo "        echo \"文件\${GFS_Software_Source_Path}/${dir_name}/Makefile不存在\"" >> ${SH}
+	echo "        unset GFS_Option GFS_Software_Source_Path" >> ${SH}
+	echo "        exit" >> ${SH}
+	echo "    fi" >> ${SH}
+	echo "    cd \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+	echo "    make clean" >> ${SH}
+	echo "fi" >> ${SH}
+	# uninstall
+	echo "if [ \"\${GFS_Option}\" == \"uninstall\" ]; then" >> ${SH}
+	echo "    if [ ! -f \"\${GFS_Software_Source_Path}/${dir_name}/Makefile\" ]; then" >> ${SH}
+	echo "        echo \"文件\${GFS_Software_Source_Path}/${dir_name}/Makefile不存在\"" >> ${SH}
+	echo "        unset GFS_Option GFS_Software_Source_Path" >> ${SH}
+	echo "        exit" >> ${SH}
+	echo "    fi" >> ${SH}
+	echo "    cd \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+	echo "    make uninstall" >> ${SH}
+	echo "fi" >> ${SH}
+	# install
+	echo "if [ \"\${GFS_Option}\" == \"install\" ]; then" >> ${SH}
+	echo "    if [ ! -f \"\${GFS_Software_Source_Path}/${dir_name}/Makefile\" ]; then" >> ${SH}
+	echo "        echo \"文件\${GFS_Software_Source_Path}/${dir_name}/Makefile不存在\"" >> ${SH}
+	echo "        unset GFS_Option GFS_Software_Source_Path" >> ${SH}
+	echo "        exit" >> ${SH}
+	echo "    fi" >> ${SH}
+	echo "    cd \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+	echo "    make install" >> ${SH}
+	echo "fi" >> ${SH}
+	# cd
+	echo "if [ \"\${GFS_Option}\" == \"cd\" ]; then" >> ${SH}
+	echo "    cd \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+	echo "    while true; do" >> ${SH}
+	echo "        read -p \"请输入命令: \" Command" >> ${SH}
+	echo "        if [ \"\${Command}\" == \"exit\" ]; then" >> ${SH}
+	echo "            unset Command GFS_Option GFS_Software_Source_Path" >> ${SH}
+	echo "            exit" >> ${SH}
+	echo "        fi" >> ${SH}
+	echo "        \${Command}" >> ${SH}
+	echo "    done" >> ${SH}
+	echo "fi" >> ${SH}
+	# remove
+	echo "if [ \"\${GFS_Option}\" == \"remove\" ]; then" >> ${SH}
+	if [ "${GFS_Download}" == "git" ]; then
+		echo "    rm -r \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+		echo "fi" >> ${SH}
+	else
+		echo "    rm -r \${GFS_Software_Source_Path}/${dir_name}" >> ${SH}
+		echo "    rm \${GFS_Software_Source_Path}/software_tar/${tar_name}" >> ${SH}
+		echo "fi" >> ${SH}
+	fi
+	#
+	echo "unset GFS_Option" >> ${SH}
+	chmod u+x ${SH}
+fi
+if [ "$1" == "del" ]; then
+	if [ ! -f "${GFS_SH_PATH}/${2}_GFS.sh" ]; then
+		echo "文件${GFS_SH_PATH}/${2}_GFS.sh不存在"
+		exit
+	fi
+	rm ${GFS_SH_PATH}/${2}_GFS.sh
+fi
+if [ "$1" == "cat" ]; then
+	if [ ! -f "${GFS_SH_PATH}/${2}_GFS.sh" ]; then
+		echo "文件${GFS_SH_PATH}/${2}_GFS.sh不存在"
+		exit
+	fi
+	cat ${GFS_SH_PATH}/${2}_GFS.sh
+fi
+
+unset SH select website_source tar_name dir_name GFS_Configure GFS_Download

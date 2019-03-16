@@ -1,0 +1,27 @@
+#! /bin/sh
+if [ "$#" != "2" ]; then
+	echo "Usage: gfs.sh option name"
+	echo "option: \n"
+	echo "    source         download the source of software\n"
+	echo "    configure      run configure or autogen\n"
+	echo "    make           run make\n"
+	echo "    makeclean      run clean in the Makefile\n"
+	echo "    uninstall      run uninstall in the Makefile\n"
+	echo "    install        run install in the Makefile\n"
+	echo "    cd             come into the directoy of software\n"
+	echo "    remove         remove the source of software\n"
+	echo "Notice: \n"
+	echo "    We suggest that you should run make with prefix.\n"
+	echo "  If you do it,you can simple remove directory when you want to uninstall\n"
+	exit
+fi
+GFS_Name="$2"
+GFS_Option="$1"
+if [ ! -f "${GFS_SH_PATH}/${GFS_Name}_GFS.sh" ]; then
+	echo "No find the script of ${GFS_NAME} in ${GFS_SH_PATH}"
+	unset GFS_Name GFS_Option
+else
+	${GFS_SH_PATH}/${GFS_Name}_GFS.sh ${GFS_Option}
+	unset GFS_Name GFS_Option
+fi
+
